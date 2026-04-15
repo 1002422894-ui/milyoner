@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מי רוצה להיות מיליונר - יום העצמאות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: radial-gradient(circle, #1a365d 0%, #000000 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .money-gradient {
+            background: linear-gradient(to bottom, #2d3748, #1a202c);
+        }
+        .option-btn {
+            transition: all 0.3s ease;
+            clip-path: polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%);
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #2b6cb0;
+            transform: scale(1.02);
+        }
+        .option-correct {
+            background-color: #2f855a !important;
+            animation: pulse 0.5s infinite;
+        }
+        .option-wrong {
+            background-color: #c53030 !important;
+        }
+        .option-selected {
+            background-color: #b7791f !important;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .lifeline-btn {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #63b3ed;
+            transition: all 0.3s;
+        }
+        .lifeline-used {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #4a5568;
+        }
+        .money-level.active {
+            color: #f6e05e;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .money-level {
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4">
+
+    <!-- Game Container -->
+    <div id="game-container" class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- Sidebar: Steps -->
+        <div class="lg:col-span-1 money-gradient p-4 rounded-xl border-2 border-blue-900 order-2 lg:order-1">
+            <h2 class="text-xl font-bold mb-4 text-center border-b border-blue-800 pb-2">שלבים</h2>
+            <div id="money-list" class="flex flex-col gap-2">
+                <!-- Will be populated by JS -->
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="lg:col-span-3 flex flex-col gap-6 order-1 lg:order-2">
+            
+            <!-- Top Bar: Lifelines -->
+            <div class="flex justify-between items-center bg-blue-900 bg-opacity-40 p-4 rounded-xl border border-blue-700">
+                <div class="flex gap-4">
+                    <button id="life-5050" class="lifeline-btn hover:bg-blue-800" title="50:50">50</button>
+                    <button id="life-audience" class="lifeline-btn hover:bg-blue-800" title="קהל">👥</button>
+                    <button id="life-skip" class="lifeline-btn hover:bg-blue-800" title="דלג">➡️</button>
+                </div>
+                <div class="text-xl font-bold italic text-blue-300">חידון עצמאות</div>
+            </div>
+
+            <!-- Question Display -->
+            <div id="question-box" class="bg-black bg-opacity-60 p-8 rounded-2xl border-x-4 border-blue-500 text-center min-h-[150px] flex items-center justify-center">
+                <h1 id="question-text" class="text-2xl md:text-3xl font-bold leading-tight">טוען שאלה...</h1>
+            </div>
+
+            <!-- Answers Grid -->
+            <div id="answers-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button class="option-btn bg-blue-900 p-4 text-right pr-12 relative text-lg font-medium" onclick="handleAnswer(0)">
+                    <span class="absolute right-4 text-orange-400 font-bold">א:</span>
+                    <span class="answer-label">תשובה 1</span>
+                </button>
+                <button class="option-btn bg-blue-900 p-4 text-right pr-12 relative text-lg font-medium" onclick="handleAnswer(1)">
+                    <span class="absolute right-4 text-orange-400 font-bold">ב:</span>
+                    <span class="answer-label">תשובה 2</span>
+                </button>
+                <button class="option-btn bg-blue-900 p-4 text-right pr-12 relative text-lg font-medium" onclick="handleAnswer(2)">
+                    <span class="absolute right-4 text-orange-400 font-bold">ג:</span>
+                    <span class="answer-label">תשובה 3</span>
+                </button>
+                <button class="option-btn bg-blue-900 p-4 text-right pr-12 relative text-lg font-medium" onclick="handleAnswer(3)">
+                    <span class="absolute right-4 text-orange-400 font-bold">ד:</span>
+                    <span class="answer-label">תשובה 4</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-blue-900 border-4 border-yellow-500 p-8 rounded-3xl max-w-md w-full text-center">
+            <h2 id="modal-title" class="text-5xl font-bold mb-4 text-yellow-400">כל הכבוד!</h2>
+            <div id="win-display" class="hidden">
+                <p class="text-2xl mb-2">פתרת את כל השאלות בהצלחה!</p>
+                <p class="text-xl mb-6">הקוד לפתיחת החדר הוא:</p>
+                <div class="text-6xl font-black text-white bg-blue-800 py-4 rounded-xl border-2 border-yellow-500 mb-6 tracking-widest">237</div>
+            </div>
+            <p id="modal-body" class="text-xl mb-6"></p>
+            <button onclick="resetGame()" class="bg-yellow-500 text-blue-900 font-bold py-3 px-8 rounded-full text-xl hover:bg-yellow-400 transition">נסה שוב</button>
+        </div>
+    </div>
+
+    <script>
+        // 5 Independence Day Questions
+        const questions = [
+            { q: "באיזה תאריך עברי הוכרזה מדינת ישראל?", a: ["ה' באייר", "א' בתשרי", "י\"ד באייר", "כ\"ט בנובמבר"], correct: 0 },
+            { q: "מי הקריא את מגילת העצמאות בטקס הכרזת המדינה?", a: ["חיים ויצמן", "דוד בן גוריון", "מנחם בגין", "גולדה מאיר"], correct: 1 },
+            { q: "מהו ההמנון הלאומי של ישראל?", a: ["ירושלים של זהב", "התקווה", "שיר הרעות", "לו יהי"], correct: 1 },
+            { q: "כמה קנים יש במנורה המופיעה בסמל המדינה?", a: ["שמונה קנים", "תשעה קנים", "שבעה קנים", "שישה קנים"], correct: 2 },
+            { q: "באיזו עיר הכריזו על הקמת המדינה?", a: ["ירושלים", "חיפה", "תל אביב", "ראשון לציון"], correct: 2 }
+        ];
+
+        const stepLabels = ["שלב 1", "שלב 2", "שלב 3", "שלב 4", "שלב הגמר"];
+
+        let currentStep = 0;
+        let lifelines = { fifty: true, audience: true, skip: true };
+        let canAnswer = true;
+
+        // Audio Context for Victory Fanfare
+        function playVictorySound() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [
+                { f: 261.63, t: 0, d: 0.2 }, // C4
+                { f: 329.63, t: 0.2, d: 0.2 }, // E4
+                { f: 392.00, t: 0.4, d: 0.2 }, // G4
+                { f: 523.25, t: 0.6, d: 0.6 }  // C5
+            ];
+
+            notes.forEach(note => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(note.f, audioCtx.currentTime + note.t);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime + note.t);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + note.t + note.d);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + note.t);
+                osc.stop(audioCtx.currentTime + note.t + note.d);
+            });
+        }
+
+        function init() {
+            renderMoney();
+            loadQuestion();
+            setupLifelines();
+        }
+
+        function renderMoney() {
+            const list = document.getElementById('money-list');
+            list.innerHTML = '';
+            // Render 5 steps
+            for (let i = 4; i >= 0; i--) {
+                const div = document.createElement('div');
+                div.className = `money-level p-2 px-4 flex justify-between rounded-lg border border-blue-800 ${i === currentStep ? 'active bg-blue-700 text-yellow-300' : ''}`;
+                div.innerHTML = `
+                    <span class="font-bold">${i + 1}.</span>
+                    <span>${stepLabels[i]}</span>
+                `;
+                list.appendChild(div);
+            }
+        }
+
+        function loadQuestion() {
+            canAnswer = true;
+            const qData = questions[currentStep];
+            document.getElementById('question-text').innerText = qData.q;
+            const buttons = document.querySelectorAll('.option-btn');
+            const labels = document.querySelectorAll('.answer-label');
+            
+            buttons.forEach((btn, idx) => {
+                btn.className = 'option-btn bg-blue-900 p-4 text-right pr-12 relative text-lg font-medium';
+                btn.disabled = false;
+                labels[idx].innerText = qData.a[idx];
+            });
+        }
+
+        function handleAnswer(idx) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const buttons = document.querySelectorAll('.option-btn');
+            const correctIdx = questions[currentStep].correct;
+
+            buttons[idx].classList.add('option-selected');
+
+            setTimeout(() => {
+                if (idx === correctIdx) {
+                    buttons[idx].classList.remove('option-selected');
+                    buttons[idx].classList.add('option-correct');
+                    
+                    setTimeout(() => {
+                        if (currentStep === 4) {
+                            playVictorySound();
+                            showWin();
+                        } else {
+                            currentStep++;
+                            renderMoney();
+                            loadQuestion();
+                        }
+                    }, 1000);
+                } else {
+                    buttons[idx].classList.remove('option-selected');
+                    buttons[idx].classList.add('option-wrong');
+                    buttons[correctIdx].classList.add('option-correct');
+                    
+                    setTimeout(() => {
+                        showModal("הפסדת...", "לא נורא, נסה שוב פעם!");
+                    }, 1500);
+                }
+            }, 80000 / 100); // Small delay for effect
+            
+            // Real delay for feedback
+            setTimeout(() => {}, 1000);
+        }
+
+        function setupLifelines() {
+            document.getElementById('life-5050').onclick = function() {
+                if (!lifelines.fifty || !canAnswer) return;
+                lifelines.fifty = false;
+                this.classList.add('lifeline-used');
+                const correctIdx = questions[currentStep].correct;
+                const buttons = document.querySelectorAll('.option-btn');
+                let removed = 0;
+                let indices = [0, 1, 2, 3].filter(i => i !== correctIdx);
+                indices.sort(() => Math.random() - 0.5);
+                indices.slice(0, 2).forEach(idx => {
+                    buttons[idx].querySelector('.answer-label').innerText = "";
+                    buttons[idx].disabled = true;
+                });
+            };
+
+            document.getElementById('life-audience').onclick = function() {
+                if (!lifelines.audience || !canAnswer) return;
+                lifelines.audience = false;
+                this.classList.add('lifeline-used');
+                const correctIdx = questions[currentStep].correct;
+                let res = [10, 10, 10, 10];
+                res[correctIdx] = 70;
+                const pollStr = res.map((r, i) => `${['א','ב','ג','ד'][i]}: ${r}%`).join(' | ');
+                const originalText = document.getElementById('question-text').innerText;
+                document.getElementById('question-text').innerHTML = `<span class="text-yellow-400">הקהל חושב:</span><br>${pollStr}`;
+                setTimeout(() => { document.getElementById('question-text').innerText = originalText; }, 3000);
+            };
+
+            document.getElementById('life-skip').onclick = function() {
+                if (!lifelines.skip || !canAnswer) return;
+                lifelines.skip = false;
+                this.classList.add('lifeline-used');
+                if (currentStep < 4) {
+                    currentStep++;
+                    renderMoney();
+                    loadQuestion();
+                } else {
+                    playVictorySound();
+                    showWin();
+                }
+            };
+        }
+
+        function showWin() {
+            document.getElementById('modal-title').innerText = "כל הכבוד!";
+            document.getElementById('win-display').classList.remove('hidden');
+            document.getElementById('modal-body').innerText = "";
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function showModal(title, body) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('win-display').classList.add('hidden');
+            document.getElementById('modal-body').innerText = body;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function resetGame() {
+            currentStep = 0;
+            lifelines = { fifty: true, audience: true, skip: true };
+            document.querySelectorAll('.lifeline-btn').forEach(b => b.classList.remove('lifeline-used'));
+            document.getElementById('modal-overlay').classList.add('hidden');
+            renderMoney();
+            loadQuestion();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
